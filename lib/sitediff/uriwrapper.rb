@@ -117,13 +117,7 @@ class SiteDiff
     def typhoeus_request
       params = @curl_opts.dup
       # Allow basic auth
-      params[:userpwd] = "#{@uri.user}:#{@uri.password}" if @uri.user
-
-      # params['verbose'] = true
-      # params['ssl_verifypeer'] = false
-      # params['ssl_verifyhost'] = 0
-      # params['followlocation'] = true
-      # puts to_s
+      params[:userpwd] = "#{@uri.user}: #{@uri.password}" if @uri.user
 
       req = Typhoeus::Request.new(to_s, params)
 
@@ -154,20 +148,20 @@ class SiteDiff
         end
       end
 
-      req.on_failure do |resp|
+      req.on_failure do |resp|           
         if resp&.status_message
           yield ReadResult.error(
-            "HTTP error when loading #{@uri} : [#{resp.response_code}] #{resp.status_message}  From: #{@referrer}",
+            "HTTP error when loading #{@uri} : [#{resp.response_code}] #{resp.status_message}  From page: #{@referrer}",
             resp.response_code
           )
         elsif (msg = resp.options[:return_code])
           yield ReadResult.error(
-            "Connection error when loading #{@uri} : [#{resp.options[:return_code]}] #{msg}  From: #{@referrer}",
+            "Connection error when loading #{@uri} : [#{resp.options[:return_code]}] #{msg}  From page: #{@referrer}",
             resp.response_code
           )
         else
           yield ReadResult.error(
-            "Unknown error when loading #{@uri} : [#{resp.response_code}] #{resp.status_message} From: #{@referrer}",
+            "Unknown error when loading #{@uri} : [#{resp.response_code}] #{resp.status_message}  From page: #{@referrer}",
             resp.response_code
           )
         end

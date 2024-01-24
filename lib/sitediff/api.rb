@@ -160,12 +160,12 @@ class SiteDiff
       )
       @paths = {}
 
-      ignore_after = @config.roots
+      ignoreAfter = @config.roots
       if @config.roots['before'] == @config.roots['after']
-        ignore_after.delete('after')
+        ignoreAfter.delete('after')    
       end
-
-      ignore_after.each do |tag, url|
+      
+      ignoreAfter.each do |tag, url|
         Crawler.new(
           hydra,
           url,
@@ -184,10 +184,6 @@ class SiteDiff
 
       # Write paths to a file.
       @paths = @paths.values.reduce(&:|).to_a.sort
-      if @paths.none? | @paths.nil?
-        return
-      end
-
       @config.paths_file_write(@paths)
 
       # Log output.
@@ -234,7 +230,7 @@ class SiteDiff
                                     @config.setting(:interval),
                                     @config.setting(:concurrency),
                                     get_curl_opts(@config.settings),
-                                    debug: options[:debug],
+                                    options[:debug],
                                     before: base)
       fetcher.run do |path, _res|
         SiteDiff.log "Visited #{path}, cached"

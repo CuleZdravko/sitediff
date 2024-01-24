@@ -43,7 +43,7 @@ class SiteDiff
 
       @found << rel
 
-      wrapper = UriWrapper.new(@base + rel, @curl_opts, debug: @debug, referrer:)
+      wrapper = UriWrapper.new(@base + rel, @curl_opts, debug: @debug, referrer: referrer)
       wrapper.queue(@hydra) do |res|
         fetched_uri(rel, depth, res)
       end
@@ -80,7 +80,15 @@ class SiteDiff
 
       # Find links
       links = find_links(doc)
-      uris = links.map { |l| resolve_link(base, l) }.compact
+      bhf = doc.xpath('//base[@href]').first
+      base_href = base
+      unless bhf.nil?
+      	base_href = Addressable::URI.parse(bhf.attr('href'))
+      end
+
+      #SiteDiff.log "Base : '#{base}'", :error 
+      #SiteDiff.log "Base href: '#{base_href}'", :error
+      uris = links.map { |l| resolve_link(base, l, base_href) }.compact
       uris = filter_links(uris)
 
       # Make them relative
@@ -95,9 +103,14 @@ class SiteDiff
     end
 
     # Resolve a potentially-relative link. Return nil on error.
-    def resolve_link(base, rel)
-      rel = rel.strip
-      base + rel
+    def resolve_link(base, rel, base_href)
+      if rel.start_with?("/")
+	#SiteDiff.log "Yes front SLASH: '#{base + rel}'", :error 
+        base + rel
+      else
+        #SiteDiff.log "No front SLASH: '#{base_href + rel}'", :warning 
+        base_href + rel
+      end
     rescue Addressable::URI::InvalidURIError
       SiteDiff.log "skipped invalid URL: '#{rel}' (at #{base})", :warning
       nil
@@ -130,7 +143,6 @@ class SiteDiff
                      u.path.start_with?(@base_uri.path)
         next unless is_sub_uri
 
-        # puts "Trying regex #{u.path}"
         is_included = @include_regex.nil? ? false : @include_regex.match(u.path)
         is_excluded = @exclude_regex.nil? ? false : @exclude_regex.match(u.path)
         if is_excluded && !is_included

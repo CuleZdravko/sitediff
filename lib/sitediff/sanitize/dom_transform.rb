@@ -103,6 +103,7 @@ class SiteDiff
         # Processes a node.
         def process(node)
           classes = to_array(@rule['class'])
+          
 
           # Must call remove_class on a NodeSet!
           ns = Nokogiri::XML::NodeSet.new(node.document, [node])

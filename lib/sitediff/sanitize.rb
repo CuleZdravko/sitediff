@@ -36,9 +36,12 @@ class SiteDiff
 
       remove_spacing
       regions || selector
-      dom_transforms
       regexps
-
+      dom_transforms
+      
+      #puts "HERE"
+      #print @node
+	
       @html || Sanitizer.prettify(@node)
     end
 
@@ -101,13 +104,13 @@ class SiteDiff
     def regexps
       (rules = @config['sanitization']) || return
       rules = rules.select { |r| want_rule(r) }
-
+      
       rules.map! { |r| Regexp.create(r) }
       selector, global = rules.partition(&:selector?)
 
       selector.each { |r| r.apply(@node) }
       @html = Sanitizer.prettify(@node)
-      @node = nil
+      #@node = #nil
       # Prevent potential UTF-8 encoding errors by removing bytes
       # Not the only solution. An alternative is to return the
       # string unmodified.
@@ -119,17 +122,22 @@ class SiteDiff
         replace: ''
       )
       global.each { |r| r.apply(@html) }
+      @node = Sanitizer.domify(@html)
     end
 
     # Perform DOM transforms
     def dom_transforms
+      #puts "DOM_TRANS"
       (rules = @config['dom_transform']) || return
       rules = rules.select { |r| want_rule(r) }
 
       rules.each do |rule|
         transform = DomTransform.create(rule)
+	#print @node
         transform.apply(@node)
+        #print @node
       end
+      @html = Sanitizer.prettify(@node)
     end
 
     ##### Implementations of actions #####
@@ -220,10 +228,10 @@ class SiteDiff
 
     # Force this object to be a document, so we can apply a stylesheet
     def self.to_document(obj)
-      if obj.instance_of?(Nokogiri::XML::Document) || obj.instance_of?(Nokogiri::HTML::Document)
+      if Nokogiri::XML::Document == obj.class || Nokogiri::HTML::Document == obj.class
         obj
       # node or fragment
-      elsif obj.instance_of?(Nokogiri::XML::Node) || obj.instance_of?(Nokogiri::HTML::DocumentFragment)
+      elsif Nokogiri::XML::Node == obj.class || Nokogiri::HTML::DocumentFragment == obj.class
         domify(obj.to_s, force_doc: true)
       else
         to_document(domify(obj, force_doc: false))

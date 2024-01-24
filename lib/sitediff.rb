@@ -137,7 +137,7 @@ class SiteDiff
       rescue StandardError => e
         raise if @debug
 
-        diff = Result.new(path, nil, nil, nil, nil, "Sanitization error: #{e.message}")
+        Result.new(path, nil, nil, nil, nil, "Sanitization error: #{e}")
       end
     end
     @results[path] = diff
